@@ -50,3 +50,19 @@ resource "aws_route_table_association" "a" {
   subnet_id      = aws_subnet.public_a.id
   route_table_id = aws_route_table.public.id
 }
+
+resource "aws_s3_bucket" "images" {
+  bucket = "image-processor-${var.environment}-${random_id.suffix.hex}"
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+resource "aws_s3_bucket_versioning" "images" {
+  bucket = aws_s3_bucket.images.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}

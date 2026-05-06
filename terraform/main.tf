@@ -32,3 +32,29 @@ resource "aws_subnet" "private_b" {
   cidr_block        = "10.0.12.0/24"
   availability_zone = "us-east-1b"
 }
+
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+}
+
+resource "aws_route_table_association" "public_a" {
+  subnet_id      = aws_subnet.public_a.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
+resource "aws_s3_bucket" "images" {
+  bucket = "image-processor-${var.environment}-${random_id.suffix.hex}"
+}

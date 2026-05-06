@@ -76,3 +76,61 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "images" {
     }
   }
 }
+
+resource "aws_sqs_queue" "main" {
+  name = "image-queue-${var.environment}"
+}
+
+resource "aws_sqs_queue" "dlq" {
+  name = "image-dlq-${var.environment}"
+}
+
+resource "aws_iam_role" "upload_role" {
+  name = "upload-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role" "crop_role" {
+  name = "crop-role-${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_lambda_function" "upload" {
+  function_name = "upload-${var.environment}"
+  role          = aws_iam_role.upload_role.arn
+  runtime       = "nodejs20.x"
+  handler       = "index.handler"
+  timeout       = 30
+  memory_size   = 256
+
+  filename         = "../lambdas/upload/upload.zip"
+  source_code_hash = filebase64sha256("../lambdas/upload/upload.zip")
+}
+
+resource "aws_lambda_function" "crop" {
+  function_name = "crop-${var.environment}"
+  role          = aws_iam_role.crop_role.arn
+  runtime       = "nodejs20.x"
+  handler       = "index.handler"
+  timeout       = 60
+  memory_size   = 512
+
+  filename         = "../lambdas/crop/crop.zip"
+  source_code_hash = filebase64sha256("../lambdas/crop/crop.zip")
+}

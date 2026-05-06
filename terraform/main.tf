@@ -111,6 +111,26 @@ resource "aws_iam_role" "crop_role" {
   })
 }
 
+resource "aws_iam_role_policy" "crop_sqs_policy" {
+  role = aws_iam_role.crop_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:ChangeMessageVisibility"
+        ],
+        Resource = aws_sqs_queue.main.arn
+      }
+    ]
+  })
+}
+
 resource "aws_lambda_function" "upload" {
   function_name = "upload-${var.environment}"
   role          = aws_iam_role.upload_role.arn
@@ -168,4 +188,10 @@ resource "aws_s3_bucket_notification" "notify" {
     events       = ["s3:ObjectCreated:*"]
     filter_prefix = "uploads/"
   }
+}
+
+resource "aws_lambda_event_source_mapping" "crop_trigger" {
+  event_source_arn = aws_sqs_queue.main.arn
+  function_name    = aws_lambda_function.crop.arn
+  batch_size       = 5
 }

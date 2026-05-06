@@ -66,3 +66,11 @@ resource "aws_s3_bucket_versioning" "images" {
     status = "Enabled"
   }
 }
+
+resource "aws_sqs_queue" "main" {
+  name = "image-queue-${var.environment}"
+}
+
+resource "aws_sqs_queue" "dlq" {
+  name = "image-dlq-${var.environment}"
+}

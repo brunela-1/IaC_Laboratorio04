@@ -79,10 +79,31 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "images" {
 
 resource "aws_sqs_queue" "main" {
   name = "image-queue-${var.environment}"
+
+  visibility_timeout_seconds = 120
 }
 
 resource "aws_sqs_queue" "dlq" {
   name = "image-dlq-${var.environment}"
+}
+
+resource "aws_sqs_queue_policy" "allow_s3" {
+  queue_url = aws_sqs_queue.main.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = "*",
+      Action = "sqs:SendMessage",
+      Resource = aws_sqs_queue.main.arn,
+      Condition = {
+        ArnEquals = {
+          "aws:SourceArn" = aws_s3_bucket.images.arn
+        }
+      }
+    }]
+  })
 }
 
 resource "aws_iam_role" "upload_role" {

@@ -1,0 +1,10 @@
+{
+  "name": "crop-lambda",
+  "version": "1.0.0",
+  "description": "Lambda para procesar imágenes en círculos",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1500.0",
+    "sharp": "^0.33.0"
+  }
+}
